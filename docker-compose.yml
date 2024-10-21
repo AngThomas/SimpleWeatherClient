@@ -1,0 +1,48 @@
+version: "3.7"
+services:
+    php:
+        labels:
+            version: $PHP_VERSION
+        build:
+            context: "./docker/php"
+            args:
+                PHP_VERSION: $PHP_VERSION
+        environment:
+            COMPOSER_MEMORY_LIMIT: -1
+        networks:
+            - backend
+        working_dir: /usr/local/apache2/htdocs
+        volumes:
+            - ./src:/usr/local/apache2/htdocs/public
+            - .:/usr/local/apache2/htdocs
+            - ./docker/php/conf.d/app.ini:/usr/local/etc/php/conf.d/app.ini
+        container_name: ${APP_NAME}_php
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+        command:
+            - sh
+            - docker/php/docker-entrypoint.sh
+
+    apache:
+        labels:
+            version: $APACHE_VERSION
+        build:
+            context: "./docker/apache"
+            args:
+                APACHE_VERSION: $APACHE_VERSION
+        depends_on:
+            - php
+        networks:
+            - backend
+        ports:
+            - "443:443"
+        working_dir: /usr/local/apache2/htdocs
+        volumes:
+            - .:/usr/local/apache2/htdocs
+        container_name: ${APP_NAME}_apache
+
+networks:
+    backend:
+
+volumes:
+    data:
